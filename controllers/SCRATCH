@@ -1,0 +1,84 @@
+ /* WMA */
+  // Function to calculate Weighted Moving Average for all raw materials
+function calculateWeightedMovingAverageForAllMaterials(n) {
+    // Query to fetch distinct raw materials from the database
+    let rawMaterialQuery = `
+        SELECT DISTINCT rm.name AS raw_material_name
+        FROM rawMaterials_Out rmo
+        JOIN raw_Materials rm ON rmo.materialID = rm.materialID;
+    `;
+
+    // Execute the query to fetch raw materials
+    let rawMaterials = executeQuery(rawMaterialQuery).map(row => row.raw_material_name);
+
+    // Iterate over each raw material
+    rawMaterials.forEach(rawMaterial => {
+        // Query database to fetch daily demand for the current raw material
+        let sqlQuery = `
+            SELECT 
+                rmo.date,
+                rm.name AS raw_material_name,
+                SUM(rmo.no_of_materials) AS daily_demand
+            FROM 
+                rawMaterials_Out rmo
+            JOIN
+                raw_Materials rm ON rmo.materialID = rm.materialID
+            WHERE 
+                rmo.date  >= DATEADD(DAY, -${n}, GETDATE())
+                AND rm.name = '${rawMaterial}'
+            GROUP BY 
+                rmo.date, rm.name
+            ORDER BY 
+                rmo.date DESC; 
+        `;
+
+        // Execute the SQL query and retrieve data points
+        let dataPoints = executeQuery(sqlQuery).map(row => row.daily_demand);
+        
+        // Calculate weights
+        let weights = calculateWeights(n);
+
+        // Calculate Weighted Moving Average
+        let weightedMovingAverage = calculateWeightedMovingAverage(dataPoints, weights);
+        console.log(`Weighted Moving Average for ${rawMaterial}:`, weightedMovingAverage);
+    });
+}
+
+// Function to calculate weights
+function calculateWeights(n) {
+    let weights = [];
+    let totalWeight = 0;
+
+    // Calculate total weight
+    for (let i = 1; i <= n; i++) {
+        totalWeight += i;
+    }
+
+    // Assign weights
+    for (let i = 1; i <= n; i++) {
+        let weight = i / totalWeight;
+        weights.push(weight);
+    }
+
+    return weights;
+}
+
+// Function to calculate Weighted Moving Average
+function calculateWeightedMovingAverage(dataPoints, weights) {
+    let weightedSum = 0;
+    for (let i = 0; i < dataPoints.length; i++) {
+        weightedSum += dataPoints[i] * weights[i];
+    }
+    return weightedSum;
+}
+
+// Example usage
+let numDays = 5; // Number of days to consider for the weighted moving average
+calculateWeightedMovingAverageForAllMaterials(n);
+                          
+                            /*  */
+
+
+
+
+                            
