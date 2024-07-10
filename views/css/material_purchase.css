@@ -1,0 +1,84 @@
+/* material_purchase.css */
+
+.content {
+    padding: 20px;
+}
+
+.materialRow {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.materialRow label,
+.materialRow select,
+.materialRow input {
+    margin-right: 5px;
+    margin-bottom: 10px;
+}
+
+.materialRow label {
+    flex: 0 0 120px; /* Set label width */
+    text-align: right;
+    padding-right: 5px;
+}
+
+.materialRow select,
+.materialRow input {
+    flex: 1; /* Input fields and select boxes will take remaining space */
+}
+
+select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath fill='%23000' d='M6 6L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+input[type="date"],
+input[type="text"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#addMaterialButton,
+.removeRow {
+    padding: 5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+#addMaterialButton img,
+.removeRow img {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+}
+
+#addMaterialButton {
+    background-color: #4CAF50;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.removeRow {
+    background-color: #f44336;
+    color: white;
+    margin-left: 10px;
+}
+
+.spacer {
+    background-color: #f4433600;
+    color: rgba(255, 255, 255, 0);
+    margin-left: 10px;
+    display: flex;
+    border: none; /* Remove any border */
+    outline: none; /* Remove any outline */
+}
