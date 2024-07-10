@@ -1,0 +1,66 @@
+app.post('/add_material', async (req, res) => {
+  const materialRows = JSON.parse(req.body.materialDataJson);
+
+  console.log("Received material data:", materialRows);
+
+  for (const materialData of materialRows) {
+    try {
+      let unit_Measure = materialData.unit_Measure === 'other' ? materialData.unit_Measure_custom : materialData.unit_Measure;
+      let material_Name = materialData.name === 'other' ? materialData.material_name_custom : materialData.name;
+
+      let materialID;
+      const existingMaterial = await checkMaterialExists(material_Name, unit_Measure);
+
+      if (existingMaterial) {
+        materialID = existingMaterial.materialID;
+        const updatedQuantity = existingMaterial.quantity + parseInt(materialData.no_of_materials);
+        await updateMaterialQuantity(materialID, updatedQuantity);
+      } else {
+        await insertNewMaterial({ 
+          name: material_Name, 
+          unit_Measure: unit_Measure, 
+          no_of_materials: parseInt(materialData.no_of_materials)
+        });
+
+        // Fetch the newly inserted material's ID
+        const newlyInsertedMaterial = await checkMaterialExists(material_Name, unit_Measure);
+        if (newlyInsertedMaterial) {
+          materialID = newlyInsertedMaterial.materialID;
+        } else {
+          console.error('Failed to insert and retrieve new material:', material_Name);
+          continue;
+        }
+      }
+
+      if (materialID) {
+        await insertMaterialPurchasing(materialID, {
+          no_of_materials: parseInt(materialData.no_of_materials),
+          unit_Measure: unit_Measure,
+          unit_Price: parseFloat(materialData.unit_Price),
+          date_Purchased: materialData.date_Purchased
+        });
+      }
+    } catch (error) {
+      console.error('Error processing material row:', material_Name, error.message);
+    }
+  }
+
+  res.redirect('/purchase_report');
+});
+
+
+
+
+create an if statement before passing the data to the db
+if unit_Measure is either [ 'ml', 'l', 'tsp', 'Tbs', 'fl-oz', 'cup', 'pnt', 'qt', 'gal' ] convert to l
+and if unit_Measure either [ 'mcg', 'mg', 'g', 'kg', 'oz', 'lb' ] mass convert to kg
+
+use this formula
+
+convert(materialData.no_of_materials).from(materialData.unit_Measure).to('l');
+
+
+
+convert(materialData.no_of_materials).from(materialData.unit_Measure).to('kg');
+
+
