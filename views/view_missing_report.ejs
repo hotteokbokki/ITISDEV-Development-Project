@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Discrepancy Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <style>
+        .add_missing_button {
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .search-container input[type=text] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .search-container button {
+            padding: 10px 15px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <%- include('sidebar.ejs') %>
+
+        <div class="content">
+            <h1>View Discrepancy Report</h1>
+            <div>
+                <hr>
+                <div class="search-container">
+                    <input type="text" id="searchBarMissing" placeholder="Search...">
+                    <form action="/searchByName" method="GET">
+                    </form>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="box" id="rawMaterialMissing">Material Name&emsp;&emsp;</th>
+                            <th class="box" id="systemQuantityMissing">System Quantity&emsp;&emsp;</th>
+                            <th class="box" id="quantityChecked">Quantity Checked&emsp;&emsp;</th>
+                            <th class="box" id="quantityLost">Quantity Lost&emsp;&emsp;</th>
+                            <th class="box" id="unitMeasureMissing">Unit Measure&emsp;&emsp;</th>
+                            <th class="box" id="dateMissing">Date&emsp;&emsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (reports && reports.length> 0) { %>
+                            <% reports.forEach(report=> { %>
+                                <tr>
+                                    <td>
+                                        <%= report.name %>
+                                    </td>
+                                    <td>
+                                        <%= report.expectedQuantity %>
+                                    </td>
+                                    <td>
+                                        <%= report.submittedQuantity %>
+                                    </td>
+                                    <td>
+                                        <%= report.difference %>
+                                    </td>
+                                    <td>
+                                        <%= report.unit_Measure %>
+                                    </td>
+                                    <td>
+                                        <%= report.date_Report %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7">No Reports Available</td>
+                                        </tr>
+                                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchBar = document.getElementById('searchBarMissing');
+        searchBar.addEventListener('keyup', () => {
+            const searchText = searchBar.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const name = row.querySelector('td:first-child').textContent.trim().toLowerCase();
+                if (name.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });    
+</script>
+</body>
+</html>

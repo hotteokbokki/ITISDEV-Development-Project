@@ -1,0 +1,35 @@
+<link rel="stylesheet" href="css/sidebar.css">
+
+<div class="sidebar">
+    <h1>Inventory Management System</h1>
+    <a href="/dashboard" class="box">View Dashboard</a>
+
+    <% if(userRole === 'Admin' || userRole === 'Stock Controller') { %>
+        <a href="/create_order" class="box">Create Order</a>
+        <a href="/view_missing_report" class="box">View Discrepancy Report</a>
+        <a href="/purchase_report" class="box">View Purchase Report</a>
+        <a href="/add_material_purchase" class="box">Add Purchased Raw Material</a>
+        <a href="/input_inventory_count" class="box">Input Inventory Count</a>
+    <% } %>
+
+    <% if(userRole === 'Admin') { %>
+        <a href="/manage_user" class="box">Manage Users</a>
+        <a href="/signup" class="box">Account Creation</a>
+    <% } %>
+
+    <% if(userRole === 'Admin' || userRole === 'Manufacturer') { %>
+        <a href="/add_chemical" class="box">Add Chemical/Recipe</a>
+    <% } %>
+
+    <% if(userRole === 'Admin' || userRole === 'Manufacturer' || userRole === 'Stock Controller') { %>
+        <a href="/view_analytics" class="box">View Analytics</a>
+        <a href="/view_usage_report" class="box">View Raw Material Usage Report</a>
+    <% } %>
+    
+ 
+    <a href="/view_chemical_list" class="box">View Chemical list</a>
+    <a href="/view_raw_materials" class="box">View Raw Materials</a>
+    <form action="/logout?_method=POST" method="POST" class="box">
+        <button type="submit" class="box">Log Out</button>
+    </form>
+</div>

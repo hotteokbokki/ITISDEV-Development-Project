@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Inventory Count</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/material_purchase.css">
+</head>
+
+<body>
+
+  <%- include('sidebar.ejs') %>
+
+    <div class="content">
+      <h1>Input Inventory Count</h1>
+      <form action="/input_inventory" method="POST" id="input_Inventory">
+        <label for="date_Report">Date:</label>
+        <input type="date" id="date_Report" name="date_Report" required>
+        <table>
+          <h3>Input Physical Count for Raw Materials and Expired Materials (if applicable)</h3>
+          <thead>
+            <tr>
+              <th class="box">Material Name</th>
+              <th class="box">Quantity</th>
+              <th class="box">Unit Measure</th>
+              <th class="box">Quantity Count (Not including Expired)</th>
+              <th class="box">Expired Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (materials && materials.length> 0) { %>
+              <% materials.forEach(material=> { %>
+                <tr>
+                  <td>
+                    <%= material.name %>
+                  </td>
+                  <td>
+                    <%= material.quantity %>
+                  </td>
+                  <td>
+                    <%= material.unit_Measure %>
+                  </td>
+                  <td>
+                    <input type="number" name="quantity_<%= material.materialID %>" class="quantity" required min="0"
+                      step="0.001">
+                  </td>
+                  <td>
+                    <input type="number" name="expired_<%= material.materialID %>" class="quantity" required min="0"
+                      step="0.001" value="0">
+                  </td>
+                </tr>
+                <% }); %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="7">No raw materials data available</td>
+                    </tr>
+                    <% } %>
+          </tbody>
+        </table>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <script>
+      const currentDate = new Date().toISOString().split('T')[0];
+      document.getElementById('date_Report').value = currentDate;
+    </script>
+</body>
+
+</html>

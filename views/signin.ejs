@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In</title>
+  <link rel="stylesheet" href="css/signin.css">
+  <script src="js/signin.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <style>
+    /* Adjust CSS to use relative units */
+    .login-container {
+      max-width: 400px; /* Set maximum width for the container */
+      margin: 0 auto; /* Center the container horizontally */
+    }
+    .login-input {
+      width: 100%; /* Set input fields to take full width of their container */
+      box-sizing: border-box; /* Ensure padding and border are included in the width */
+      padding: 8px; /* Add padding to input fields */
+      margin-bottom: 16px; /* Add margin to separate input fields */
+    }
+    .password-container {
+      position: relative;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .login-button {
+      width: 100%; /* Set button to take full width of its container */
+      padding: 10px; /* Add padding to button */
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1 class="login-text-header">Login</h1>
+    <form method="POST" id="loginForm">
+      <input class="login-input" type="text" placeholder="Username" name="username">
+      <div class="password-container">
+        <input class="login-input" type="password" placeholder="Password" name="password" id="passwordInput">
+        <div class="password-toggle" onclick="togglePasswordVisibility()">
+          <img src="https://img.icons8.com/ios/452/visible.png" alt="Toggle Password" style="width: 18px; height: 18px;">
+        </div>
+          <div id="error-message" style="color: red; display: none;"></div>
+      </div>
+      <button class="login-button" type="submit">Log In</button>
+    </form>
+    <div id="errorContainer" style="color: red;"></div>
+  </div>
+
+
+</body>
+
+<script>
+  // Function to display an error message
+  function displayErrorMessage(message) {
+    const errorMessageElement = document.getElementById('error-message');
+    errorMessageElement.textContent = message;
+    errorMessageElement.style.display = 'block'; // Show the error message
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+
+    if (error === 'auth') {
+      displayErrorMessage('Incorrect username or password. Please try again.');
+    }
+  });
+
+  // validation for empty fields
+  document.getElementById('loginForm').addEventListener('submit', function(event) {
+    var username = document.getElementsByName('username')[0].value.trim();
+    var password = document.getElementsByName('password')[0].value.trim();
+
+    if (username === '' || password === '') {
+      displayErrorMessage('Please fill in both username and password.');
+      event.preventDefault(); 
+    }
+  });
+
+</script>
+
+</html>

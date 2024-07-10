@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/add_material.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <style>
+    .orderDataRow {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .orderDataRow label {
+      margin-right: 10px;
+    }
+    .orderDataRow select,
+    .orderDataRow input[type="number"],
+    .orderDataRow input[readonly] {
+      width: 100px;
+      margin-right: 10px;
+    }
+    .materialList {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+
+    .chemicalHeader {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+  }
+
+  .materialRow {
+    background-color: #f2f2f2;
+    padding: 5px 10px;
+    border-left: 5px solid #4CAF50;
+    margin: 5px 0;
+  }
+
+  .materialRow div {
+    font-size: 14px;
+  }
+
+  </style>
+</head>
+<body>
+
+<%- include('sidebar.ejs') %>
+
+<div class="content">
+  <h1>Create Order</h1>
+  <div>
+    <hr>
+    <form action="/create_order" method="POST" id="orderForm">
+      <label for="date_Purchased" style="display: inline-block; margin-right: 10px;">Date:</label>
+      <div style="display: inline-block;">
+        <input type="date" id="date_Purchased" name="date_Purchased" required style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+      </div>
+
+
+      <div id="orderDataRows">
+        <!-- Initial Order Data row will be added dynamically -->
+      </div>
+      
+      <button type="button" id="addOrderDataRowButton">Add Row</button>
+      <button type="submit">Submit</button>
+      <input type="hidden" id="orderDataJson" name="orderDataJson">
+    </form>
+
+    <div id="materialList" class="materialList">
+      <!-- Material list will be populated dynamically -->
+    </div>
+  </div>
+</div>
+
+<script>
+  const currentDate = new Date().toISOString().split('T')[0];
+  document.getElementById('date_Purchased').value = currentDate;
+  var chemicalQuantities = {};
+
+  // Define unitOptions here
+  const unitOptions = `<% units.forEach(function(unit) { %><option value="<%= unit.measure_ID %>"><%= unit.measure_ID %></option><% }); %><option value="other">Other...</option>`;
+
+
+  function addOrderDataRow(
+    chemicalOptions = `<% chemicals.forEach(function(chemical) { %><option value="<%= chemical.chemical_Name %>"><%= chemical.chemical_Name %></option><% }); %>`) {
+    
+    var orderDataRows = document.getElementById('orderDataRows');
+    var newRow = document.createElement('div');
+    newRow.classList.add('orderDataRow');
+    
+    var chemicalOptions = `<option value="" disabled selected hidden>-- Select --</option>
+    <% chemicals.forEach(function(chemical) { %><option value="<%= chemical.chemical_Name %>" data-baseQuantity="<%= chemical.base_Quantity %>" data-unitMeasure="<%= chemical.unit_Measure %>"><%= chemical.chemical_Name %></option><% }); %>`;
+
+    newRow.innerHTML = `
+      <label for="chemical_Name">Choose Chemical:</label>
+      <select name="chemical_Name" class="chemical_Name" onchange="updateBaseQuantityAndUnitMeasure(this)" required>
+        ${chemicalOptions}
+      </select>
+      
+      <label for="baseQuantity">Base Quantity:</label>
+      <input type="number" name="baseQuantity" class="baseQuantity" readonly>
+      
+      <label for="unitMeasure">Unit Measure:</label>
+      <input type="text" name="unitMeasure" class="unitMeasure" readonly>
+
+      <label for="quantity">Quantity:</label>
+      <input type="number" name="quantity" class="quantity" required min="0" onchange="updateMaterialList(this)">
+    `;
+
+    if (orderDataRows.children.length > 0) {
+      newRow.innerHTML += `<button type="button" class="removeRowButton" onclick="removeOrderDataRow(this)">Remove</button>`;
+    }
+
+    orderDataRows.appendChild(newRow);
+  }
+
+  // ... rest of the script including AJAX calls and form submission handling ...
+
+  function updateBaseQuantityAndUnitMeasure(selectElement) {
+    var selectedOption = selectElement.options[selectElement.selectedIndex];
+    var baseQuantity = selectedOption.getAttribute('data-baseQuantity');
+    var unitMeasure = selectedOption.getAttribute('data-unitMeasure');
+
+    var row = selectElement.parentNode;
+    row.querySelector('.baseQuantity').value = baseQuantity;
+    row.querySelector('.unitMeasure').value = unitMeasure;
+
+    // Update material list
+    updateMaterialList(row.querySelector('.quantity'));
+  }
+
+  function updateMaterialList(quantityInput) {
+    var quantity = parseInt(quantityInput.value); // Convert quantity to an integer
+    if (isNaN(quantity)) {
+        // Quantity is not a valid number, handle this case (e.g., display an error message)
+        console.error('Invalid quantity input:', quantityInput.value);
+        return;
+    }
+    console.log('Quantity:', quantity);
+    var chemicalName = quantityInput.parentNode.querySelector('.chemical_Name').value;
+    console.log('Chemical Name:', chemicalName);
+
+    // Increment chemical quantity or add it if it doesn't exist
+    if (chemicalQuantities.hasOwnProperty(chemicalName)) {
+        chemicalQuantities[chemicalName] += quantity;
+    } else {
+        chemicalQuantities[chemicalName] = quantity;
+    }
+
+    // Fetch and display materials required for the selected chemical and quantity
+    fetchMaterialsForChemical(chemicalName, chemicalQuantities[chemicalName]);
+}
+
+
+
+
+  function fetchMaterialsForChemical(chemicalName, quantity) {
+    $.ajax({
+        url: '/materials_for_chemical',
+        type: 'GET',
+        data: { chemical_Name: chemicalName, quantity: quantity },
+        success: function(materials) {
+            displayMaterialList(materials, chemicalName);
+        },
+        error: function(error) {
+            console.error('Error fetching materials:', error);
+            // Handle error
+        }
+    });
+  }
+
+  function displayMaterialList(materials, chemicalName) {
+    var materialListDiv = document.getElementById('materialList');
+
+    // Clear existing materials for the selected chemical
+    removeExistingChemicalMaterials(chemicalName);
+
+    var chemicalHeader = document.createElement('div');
+    chemicalHeader.classList.add('chemicalHeader');
+    chemicalHeader.innerHTML = `<strong>${chemicalName}</strong>`;
+    chemicalHeader.setAttribute('data-chemical', chemicalName); // Set a data attribute for identification
+    materialListDiv.appendChild(chemicalHeader);
+
+    materials.forEach(material => {
+        var materialRow = document.createElement('div');
+        materialRow.classList.add('materialRow');
+        materialRow.setAttribute('data-chemical', chemicalName); // Set a data attribute for identification
+        materialRow.innerHTML = `
+            <div>${material.name} ${material.quantity} ${material.unitMeasure}</div>
+        `;
+        materialListDiv.appendChild(materialRow);
+    });
+}
+
+function removeExistingChemicalMaterials(chemicalName) {
+    var materialListDiv = document.getElementById('materialList');
+    var existingElements = materialListDiv.querySelectorAll(`[data-chemical='${chemicalName}']`);
+    existingElements.forEach(element => element.remove());
+}
+
+function removeOrderDataRow(buttonElement) {
+    var rowToRemove = buttonElement.parentNode;
+    var chemicalName = rowToRemove.querySelector('.chemical_Name').value;
+    var quantity = parseInt(rowToRemove.querySelector('.quantity').value);
+
+    // Decrement chemical quantity
+    if (chemicalQuantities.hasOwnProperty(chemicalName)) {
+        chemicalQuantities[chemicalName] -= quantity;
+        // Remove the chemical entry if the quantity becomes 0 or negative
+        if (chemicalQuantities[chemicalName] <= 0) {
+            delete chemicalQuantities[chemicalName];
+        }
+    }
+
+    // Remove associated chemical materials
+    removeExistingChemicalMaterials(chemicalName);
+
+    // Remove the order data row
+    rowToRemove.parentNode.removeChild(rowToRemove);
+}
+
+
+
+  document.getElementById('orderForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const datePurchased = document.getElementById('date_Purchased').value;
+    const orderDataRows = document.querySelectorAll('.orderDataRow');
+    const orderData = [];
+
+    orderDataRows.forEach(row => {
+      const chemicalName = row.querySelector('.chemical_Name').value;
+      const quantity = row.querySelector('.quantity').value;
+      const unitMeasure = row.querySelector('.unitMeasure').value;
+
+      const data = {
+          chemical_Name: chemicalName,
+          quantity: quantity,
+          unitMeasure: unitMeasure,
+          date_Purchased: datePurchased
+      };
+
+      orderData.push(data);
+    });
+
+    const orderDataJson = JSON.stringify(orderData);
+    document.getElementById('orderDataJson').value = orderDataJson;
+
+    try {
+      const response = await fetch(this.action, {
+          method: this.method,
+          body: new URLSearchParams(new FormData(this))
+      });
+      if (response.ok) {
+          alert('Order added successfully!');
+          this.reset();
+      } else {
+          alert('Error adding order');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error adding order');
+    }
+  });
+
+  document.getElementById('addOrderDataRowButton').addEventListener('click', function() {
+    addOrderDataRow();
+  });
+
+  addOrderDataRow();
+</script>
+
+</body>
+</html>

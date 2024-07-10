@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chemical List</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/sidebar.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+    .add_chemical_button {
+        background-color: green;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    .search-container {
+        display: flex; 
+        align-items: center; 
+    }
+    .search-container form {
+        margin-left: 10px; 
+    }
+</style>
+</head>
+<body>
+
+<%- include('sidebar.ejs') %>
+
+<div class="content">
+    
+    <h1>View Chemical list</h1>
+    <div class="search-container">
+        <label for="searchBarSales">Search:</label>
+        <input type="text" id="searchBarSales" placeholder="Chemical Name">
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th class="box">Chemical Name</th>
+                <th class="box">Unit Measure</th>
+                <th class="box">Cost</th>
+                <th class="box">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (chemicals && chemicals.length > 0) { %>
+                <% chemicals.forEach(chemicals => { %>
+                    <tr>
+                        <td><%= chemicals.chemical_Name %></td>
+                        <td><%= chemicals.unit_Measure %></td>
+                        <td><%= chemicals.unit_Cost %></td>
+                        <td><%= chemicals.is_Active %></td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="7">No chemical data available</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("#searchBarSales").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("table tbody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+        });
+    });
+</script>
+
+
+</body>
+</html>

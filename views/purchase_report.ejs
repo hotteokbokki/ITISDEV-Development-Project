@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/css/sidebar.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style>
+    .search-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .search-container label {
+        margin-right: 10px;
+    }
+    .search-container input[type="text"],
+    .search-container input[type="date"] {
+        width: 150px;
+        margin-right: 10px;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    .search-container button {
+        background-color: green;
+        color: white;
+        border: none;
+        cursor: pointer;
+        padding: 7px 15px;
+        border-radius: 5px;
+    }
+    .date-indicator {
+        margin-bottom: 10px;
+        font-weight: bold;
+        display: none; /* Hide the date range indicator initially */
+    }
+    .back_purchase_report {
+        cursor: pointer;
+        user-select: none; 
+        float: right;
+        padding: 10px 20px;
+        background-color: #0284ac;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<%- include('sidebar.ejs') %>
+
+<div class="content">
+  <h1>View Purchase Report 
+    <% if (showBackButton) { %>
+        <button class="back_purchase_report" onclick="goBack()">Back</button>
+    <% } %>
+  </h1>
+    <div>
+        <hr>
+        <div class="search-container">
+            <form action="/searchByNamePurchaseReport" method="GET">
+                <label for="searchForName">Search:</label>
+                <input type="text" id="searchForName" name="materialName" placeholder="Material Name">
+            </form>
+            <form id="dateForm" action="/searchByDate" method="GET"> 
+                <label for="fromDateFilter">From Date:</label>
+                <input type="date" id="fromDateFilter" name="fromDateFilter">
+                <label for="toDateFilter">To Date:</label>
+                <input type="date" id="toDateFilter" name="toDateFilter">
+                <input type="hidden" id="hiddenFromDate" value="<%= fromDate || '' %>">
+                <input type="hidden" id="hiddenToDate" value="<%= toDate || '' %>">
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+        
+        <!-- Date range indicator -->
+        <div class="date-indicator" id="dateIndicator">
+            <% if (fromDate && toDate) { %>
+                Showing data from <%= fromDate %> to <%= toDate %>
+            <% } %>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <% if (purchases && purchases.length > 0) { %>
+                        <% if (purchases.some(purchase => purchase.materialName)) { %>
+                            <th class="box">Material Name</th>
+                        <% } %>
+                        <% if (purchases.some(purchase => purchase.no_of_materials)) { %>
+                            <th class="box">Quantity</th>
+                        <% } %>
+                        <% if (purchases.some(purchase => purchase.unit_Measure)) { %>
+                            <th class="box">Unit Measure</th>
+                        <% } %>
+                        <% if (purchases.some(purchase => purchase.total_Price)) { %>
+                            <th class="box">Total price</th>
+                        <% } %>
+                        <% if (purchases.some(purchase => purchase.unit_Price)) { %>
+                            <th class="box">Unit price</th>
+                        <% } %>
+                        <% if (purchases.some(purchase => purchase.date_Purchased)) { %>
+                            <th class="box">Date Purchased</th>
+                        <% } %>
+                        <% if (!purchases.some(purchase => purchase.unit_Price && purchase.total_Price && purchase.date_Purchased)) { %>
+                            <th class="box">Actions</th>
+                        <% } %>
+                    <% } %>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (!purchases) { %>
+                    <tr>
+                        <td colspan="7">
+                            ------ Please Enter a Date Range to Generate Report ------
+                        </td>
+                    </tr>
+                <% } else if (purchases.length === 0) { %>
+                    <tr>
+                        <td colspan="7">
+                            ------ No Data Found for the Specified Date Range ------
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <% purchases.forEach((purchase, index) => { %>
+                        <tr>
+                            <% if (purchase.materialName) { %>
+                                <td><%= purchase.materialName %></td>
+                            <% } %>
+                            <% if (purchase.no_of_materials) { %>
+                                <td><%= purchase.no_of_materials %></td>
+                            <% } %>
+                            <% if (purchase.unit_Measure) { %>
+                                <td><%= purchase.unit_Measure %></td>
+                            <% } %>
+                            <% if (purchase.total_Price) { %>
+                                <td><%= purchase.total_Price %></td>
+                            <% } %>
+                            <% if (purchase.unit_Price) { %>
+                                <td><%= purchase.unit_Price %></td>
+                            <% } %>
+                            <% if (purchase.date_Purchased) { %>
+                                <td><%= purchase.date_Purchased %></td>
+                            <% } %>
+                            <% if (!purchase.unit_Price && !purchase.total_Price && !purchase.date_Purchased) { %>
+                                <td><button onclick="window.location.href = '/detailedReport/<%= encodeURIComponent(purchase.materialName) %>?fromDate=<%= fromDate %>&toDate=<%= toDate %>'">View Detailed Report</button></td>
+                            <% } %>
+                        </tr>
+                    <% }); %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>    
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Keyup event for filtering table rows based on material name
+        $("#searchForName").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("table tbody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+
+        // Function to update the date range indicator
+        function updateDateIndicator() {
+            const hiddenFromDate = document.getElementById('hiddenFromDate').value;
+            const hiddenToDate = document.getElementById('hiddenToDate').value;
+            const dateIndicator = document.getElementById('dateIndicator');
+
+            if (hiddenFromDate && hiddenToDate) {
+                dateIndicator.textContent = `Showing data from ${hiddenFromDate} to ${hiddenToDate}`;
+                dateIndicator.style.display = 'block'; // Show the date range indicator
+            }
+        }
+
+        // Call updateDateIndicator on page load
+        updateDateIndicator();
+
+        // Update the date range indicator on form submission
+        $('#dateForm').submit(function() {
+            updateDateIndicator();
+        });
+
+        // Set the default date values for the date filters
+        const currentDate = new Date().toISOString().split('T')[0];
+        document.getElementById('fromDateFilter').value = currentDate;
+        document.getElementById('toDateFilter').value = currentDate;
+
+        var showBackButton = $('#showBackButton').val() === 'true';
+        if (showBackButton) {
+            var backButtonHtml = '<button onclick="goBack()">Back</button>';
+            $('.content h1').after(backButtonHtml);
+        }
+
+        window.goBack = function() {
+            var backUrl = '/searchByDate';
+            var hiddenFromDate = document.getElementById('hiddenFromDate').value;
+            var hiddenToDate = document.getElementById('hiddenToDate').value;
+            if (hiddenFromDate && hiddenToDate) {
+                backUrl += '?fromDateFilter=' + encodeURIComponent(hiddenFromDate) +
+                           '&toDateFilter=' + encodeURIComponent(hiddenToDate);
+              }
+            window.location.href = backUrl;
+        };
+    });
+</script>
+</body>
+</html>

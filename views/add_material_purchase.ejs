@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Raw Material</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/add_material.css">
+</head>
+<body>
+
+<%- include('sidebar.ejs') %>
+
+<div class="content">
+  <h1>Add Purchased Raw Material</h1>
+  <div>
+      <hr>
+  <form action="/add_material" method="POST" id="materialForm">
+
+      <label for="dateOrderedMaterial">Date:</label>
+      <input type="date" id="date_Purchased" name="date_Purchased" required>
+      
+      <div id="materialRows">
+          <!-- Initial Material row will be added dynamically -->
+      </div>
+      
+      <button type="button" id="addMaterialButton">Add Row</button>
+      
+      <button type="submit">Submit</button>
+
+      <input type="hidden" id="materialDataJson" name="materialDataJson">
+  </form>
+</div>
+
+<script>
+  const currentDate = new Date().toISOString().split('T')[0];
+  document.getElementById('date_Purchased').value = currentDate;
+
+  function checkMaterialOption(selectElement) {
+    var textBox = selectElement.parentNode.querySelector('.material_name_custom');
+    textBox.style.display = selectElement.value === 'other' ? 'inline' : 'none';
+    textBox.required = selectElement.value === 'other';
+  }
+
+  function addMaterialRow(
+  materialOptions = `
+    <% material.forEach(function(material) { %>
+      <option value="" disabled selected hidden>-- Select --</option>
+      <option value="<%= material.name %>"><%= material.name %></option>
+    <% }); %>
+    <option value="other">Other...</option>
+  `,
+  unitOptions = `
+    <% units.forEach(function(unit) { %>
+      <option value="" disabled selected hidden>-- Select --</option>
+      <option value="<%= unit.measure_ID %>"><%= unit.measure_ID %></option>
+    <% }); %>
+  `
+) {
+  
+  var materialRows = document.getElementById('materialRows');
+  var newRow = document.createElement('div');
+  newRow.classList.add('materialRow');
+  
+  newRow.innerHTML = `
+      <label for="rawMaterial">Raw Material:</label>
+      <select name="rawMaterial" class="rawMaterial" onchange="checkMaterialOption(this)" required style="width: 100px;">
+              ${materialOptions}
+      </select>
+      <input type="text" class="material_name_custom" name="material_name_custom" placeholder="Enter Name" style="display: none; width: 100px;">
+      
+      <label for="quantity">Quantity:</label>
+      <input type="number" name="quantity" class="quantity" required min="0" style="width: 90px;">
+      
+      <label for="unitMeasure">Unit Measure:</label>
+      <select name="unitMeasure" class="unitMeasure" required style="width: 100px;">
+              ${unitOptions}
+      </select>
+
+      <label for="unitPrice">Unit Price:</label>
+        <input type="text" class="unit_Price" name="unit_Price" required style="width: 90px;">
+  `;
+
+  // Check if "Other..." is selected for raw material and trigger the display of the text box
+  if (newRow.querySelector('.rawMaterial').value === 'other') {
+      newRow.querySelector('.material_name_custom').style.display = 'inline';
+  }
+
+  // Add a remove button for each row except the first one
+  if (materialRows.children.length > 0) {
+      newRow.innerHTML += `<button type="button" class="removeRowButton" onclick="removeMaterialRow(this)">Remove</button>`;
+  }
+
+  materialRows.appendChild(newRow);
+}
+
+
+    // Function to remove a raw material row
+    function removeMaterialRow(buttonElement) {
+        var rowToRemove = buttonElement.parentNode;
+        rowToRemove.parentNode.removeChild(rowToRemove);
+    }
+
+  document.getElementById('materialForm').addEventListener('submit', function(event) {
+  const materialRows = document.querySelectorAll('.materialRow');
+  const datePurchased = document.getElementById('date_Purchased').value;
+  const materialData = Array.from(materialRows).map(row => {
+    return {
+      name: row.querySelector('.rawMaterial').value,
+      no_of_materials: row.querySelector('.quantity').value,
+      unit_Measure: row.querySelector('.unitMeasure').value,
+      unit_Price: row.querySelector('.unit_Price').value,
+      material_name_custom: row.querySelector('.material_name_custom').value,
+      date_Purchased: datePurchased
+    };
+  });
+
+  document.getElementById('materialDataJson').value = JSON.stringify(materialData);
+  });
+
+
+  // Event listener for the Add Material button
+  document.getElementById('addMaterialButton').addEventListener('click', function() {
+        addMaterialRow();
+    });
+
+    // Call the function to add the first material row
+    addMaterialRow();
+
+</script>
+
+</body>
+</html>

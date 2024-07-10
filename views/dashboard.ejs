@@ -1,0 +1,294 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Page</title>
+    <link rel="stylesheet" href="/views/css/analytics.css">
+    <script src="/controllers/algorithms.js"></script>
+    <script src="/controllers/functionalScripts.js"></script>
+    
+    <style>
+        /* analytics.css */
+    
+        /* Style for "LOW ON STOCKS" */
+        .LOS {
+            color: rgb(0, 0, 0);
+            width: 100%;
+        }
+    
+        .LOS h2{
+            color: #2a7fff;
+            margin-bottom: 0px;
+            padding: 0px;
+            text-decoration-style: solid;
+        }
+        .LOS h4{
+            margin: 0px;
+        }
+    
+        /* Style for the dropdown menu */
+        .converter select {
+            padding: 7px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    
+        /* Style for the input field */
+        .converter input[type="number"] {
+            padding: 7px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+    
+        /* Style for the label */
+        .converter label {
+            display: block;
+            margin-bottom: 5px;
+        }
+    
+        /* Style for the "Requisition Form" div */
+        .Requisition-Form {
+            display: flex;
+            width: 100%;
+        }
+    
+        /* Adjust table section width to 50% */
+        .table-section {
+            flex: 1;
+            padding-right: 10px;
+        }
+
+        /* Add this CSS to your stylesheet */
+
+/* Add this CSS to your stylesheet */
+
+/* Container for the tables */
+.table-container {
+    max-height: 200px; /* Set your desired fixed height */
+    overflow-y: auto; /* Enable vertical scrollbar */
+}
+
+/* Style for the tables */
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-container th, .table-container td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.table-container th {
+    background-color: #0284ac; /* Blue background color for table header */
+    color: white; /* White text color for table header */
+}
+
+.table-container tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Light gray background color for even rows */
+}
+
+.table-container tbody tr:hover {
+    background-color: #ddd; /* Darker gray background color on hover */
+}
+
+
+    
+        /* Adjust form section width to 50% */
+        .form-section {
+            flex: 1;
+            padding-left: 10px;
+        }
+    
+        /* Style for the button */
+        .converter button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    
+        .converter button:hover {
+            background-color: #45a049;
+        }
+    
+        /* Container for three parts */
+        .container {
+            display: flex;
+            flex-direction: column;
+        }
+    
+        /* Adjust the height of each part */
+        .part {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .Requisition-Form {
+        background-color: #ffffff; /* Background color */
+        padding: 20px; /* Add padding */
+        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+        border-radius: 10px; /* Add rounded corners */
+        margin: 0 auto; /* Center horizontally */
+        max-width: 98%; /* Set maximum width */
+    }
+
+
+    </style>
+    
+    
+</head>
+<body>
+    <%- include('sidebar.ejs') %>
+  
+<div class="content">
+
+    <div class="Requisition-Form">
+        <section class="table-section">
+            <section class="data-container">
+                <section class="data">
+                    <table id="analyticsTable">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Quantity to be Bought</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsTableBody">
+                            <!-- Table rows will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+        </section>
+        <section class="form-section">
+            <h2 style="margin-bottom: 1px; color: #2a7fff;">Compute Materials Needed For The Day</h2>
+            <section class="converter">
+                <h4 style="margin: 1;">Select algorithm</h4>
+                <select id="unit" onchange="toggleInputField()">
+                    <option value="">Choose an algorithm</option>
+                    <option value="SMA">Simple Moving Average</option>
+                    <!-- <option value="WMA">Weighted Moving Average</option> -->
+                    <!-- <option value="SD">Seasonal Decomposition</option>
+                    <option value="HOLT">Holt's</option>
+                    <option value="ADA">Anomaly Detection Algorithm</option>
+                    <option value="KNN">KNN</option>
+                    <option value="SVM">Sector Vector Machine</option> -->
+                </select>
+                <div id="daysInput" style="display: none;">
+                    <label for="days">Number of Days Prior:</label>
+                    <input type="number" id="days" name="days" min="1" value="1">
+                </div>
+                <button onclick="compute()">Compute</button>
+            </section>
+        </section>
+    </div>
+    
+
+    <div class="LOS">
+        <h2>In-Demand Chemicals</h2>
+        <h4 id="currentDate"></h4>
+        <hr>
+        <section class="data-container">
+            <section class="data">
+                <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Chemical</th>
+                            <th>Orders</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% chemicalData.forEach(chemical => { %>
+                            <tr>
+                                <td><%= chemical.chemicalName %></td>
+                                <td><%= chemical.totalOrders %> orders</td>
+
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+                </div>
+            </section>
+        </section>
+    </div>
+
+ 
+        
+        
+
+     
+
+        
+</div>
+
+<script>
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+
+    // Assuming chemicalData contains the chemical data fetched from the server
+    const chemicalData = [
+ { chemicalName: "Hydrogen peroxide", totalOrders: 12 },
+    { chemicalName: "Polypropylene", totalOrders: 15 }
+    // Add more chemical data here if needed
+];
+
+// Function to populate the in-demand chemicals table
+function populateInDemandChemicalsTable() {
+    const tableBody = document.getElementById("inDemandChemicalsTableBody");
+    tableBody.innerHTML = ""; // Clear existing rows
+    chemicalData.forEach(chemical => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${chemical.chemicalName}</td>
+            <td>${chemical.quantityToPurchase} orders</td>
+            <td>${chemical.unitMeasure} unitmeasure</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Call the function to populate the table
+populateInDemandChemicalsTable();
+
+
+
+async function populateAnalyticsTable() {
+        const days = document.getElementById('days').value;
+        try {
+            const response = await fetch(`/compute_sma?days=${days}`);
+            const data = await response.json();
+            const tableBody = document.getElementById('analyticsTableBody');
+            tableBody.innerHTML = ''; // Clear existing rows
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.raw_material_name}</td>
+                    <td>${row.sma}</td>
+                    <td>${row.unit}</td> 
+                `;
+                tableBody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+
+    function compute() {
+        populateAnalyticsTable();
+    }
+
+</script>
+
+</body>
+</html>

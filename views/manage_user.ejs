@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <style>
+        /* Styles for inactive rows */
+        .inactive-row {
+            background-color: #f2f2f2; /* Grey background color */
+            color: #999; /* Grey font color */
+        }
+
+        /* Rest of the CSS styles remain the same */
+
+        .action_buttons, .modal-content button {
+            background-color: #3498db; /* Blue color */
+            color: white;
+            border: none;
+            border-radius: 3px; /* Rounded corners */
+            padding: 10px 20px;
+            text-decoration: none; /* Remove default underline */
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s ease; /* Smooth transition */
+            width: 150px; /* Uniform width for buttons */
+            margin-bottom: 5px; /* Add margin between buttons */
+        }
+
+        .action_buttons:hover, .modal-content button:hover {
+            background-color: #2980b9; /* Darker blue on hover */
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+
+        /* Modal content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 5% from the top and centered */
+            padding: 20px;
+            border-radius: 5px;
+            width: 50%; /* Could be more or less, depending on screen size */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Close button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Password visibility icon */
+        .password-icon {
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            top: calc(50% + 10px);
+        }
+
+        /* Add line under Reset Password header */
+        .modal-content h2 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        /* Style input fields */
+        .modal-content label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .modal-content input[type="password"],
+        .modal-content input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+
+        /* Style activate button */
+        .activate-button {
+            background-color: #27ae60; /* Muted green color */
+        }
+
+        /* Style deactivate button */
+        .deactivate-button {
+            background-color: #e74c3c; /* Muted red color */
+        }
+
+    </style>
+</head>
+<body>
+
+<%- include('sidebar.ejs') %>
+
+<div class="content">
+    <h1>Manage Users</h1>
+    <div>
+        <hr>
+        <table>
+            <tr>
+                <th class="box">Username</th>
+                <th class="box">Role</th>
+                <th class="box">Email</th>
+                <th class="box">First Name</th>
+                <th class="box">Last Name</th>
+                <th class="box">Status</th>
+                <th class="box">Actions</th>
+            </tr>
+            <!-- Iterate over userList to generate rows for each user -->
+            <% if (users.length > 0) { %>
+            <% users.forEach(user => { %>
+            <tr class="<%= user.is_Active ? '' : 'inactive-row' %>">
+                <td class="box"><%= user.username || 'No data available' %></td>
+                <td class="box"><%= user.position || 'No data available' %></td>
+                <td class="box"><%= user.email || 'No data available' %></td>
+                <td class="box"><%= user.first_name || 'No data available' %></td>
+                <td class="box"><%= user.last_name || 'No data available' %></td>
+                <td class="box" id="status-<%= user.accountID %>"><%= user.is_Active ? 'Active' : 'Inactive' %></td>
+                <td class="box">
+                    <a href="javascript:void(0);" onclick="openModal('<%= user.accountID %>')" class="action_buttons">Reset Password</a>
+                    <br/><br/>
+                    <% if (user.is_Active) { %>
+                    <button class="action_buttons deactivate-button" onclick="deactivateUser('<%= user.accountID %>')">Deactivate User</button>
+                    <% } else { %>
+                    <button class="action_buttons activate-button" onclick="activateUser('<%= user.accountID %>')">Activate User</button>
+                    <% } %>
+                </td>
+
+            </tr>
+            <% }) %>
+            <% } else { %>
+            <tr>
+                <td class="box" colspan="5">No data available</td>
+            </tr>
+            <% } %>
+        </table>
+    </div>
+</div>
+
+<!-- Modal popup -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Reset Password</h2>
+        <form id="resetPasswordForm">
+            <input type="hidden" id="userAccountID" name="accountID">
+            <div>
+                <label for="currentPassword">Current Password:</label>
+                <input type="password" id="currentPassword" name="currentPassword">
+            </div>
+            <div>
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" name="newPassword">
+                <span class="password-icon" onclick="togglePasswordVisibility('newPassword')">
+                    <img src="eye-icon.png" alt="Show Password">
+                </span>
+            </div>
+            <div>
+                <label for="confirmPassword">Retype New Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword">
+                <span class="password-icon" onclick="togglePasswordVisibility('confirmPassword')">
+                    <img src="eye-icon.png" alt="Show Password">
+                </span>
+                <span id="passwordMatchIndicator"></span>
+            </div>
+            <button type="button" id="resetButton" onclick="resetPassword()">Reset Password</button>
+            <button type="button" onclick="closeModal()">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+
+    // Function to open the modal
+    function openModal(accountID) {
+        // Populate modal with user-specific data if needed
+        document.getElementById('userAccountID').value = accountID;
+        document.getElementById('myModal').style.display = 'block';
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById('myModal').style.display = 'none';
+    }
+
+    // Function to toggle password visibility
+    function togglePasswordVisibility(inputId) {
+        var input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+        } else {
+            input.type = "password";
+        }
+    }
+
+    // Function to check if new passwords match
+    function checkPasswordMatch() {
+        var newPassword = document.getElementById('newPassword').value;
+        var confirmPassword = document.getElementById('confirmPassword').value;
+        var indicator = document.getElementById('passwordMatchIndicator');
+        if (newPassword === confirmPassword) {
+            indicator.innerText = "Passwords match";
+            indicator.style.color = "green";
+            return true;
+        } else {
+            indicator.innerText = "Passwords do not match";
+            indicator.style.color = "red";
+            return false;
+        }
+    }
+
+    // Function to enable/disable reset button based on password match
+    function updateResetButtonState() {
+        var resetButton = document.getElementById('resetButton');
+        resetButton.disabled = !checkPasswordMatch();
+    }
+
+    // Event listeners for input fields
+    document.getElementById('newPassword').addEventListener('input', updateResetButtonState);
+    document.getElementById('confirmPassword').addEventListener('input', updateResetButtonState);
+
+    function resetPassword() {
+        const accountID = document.getElementById('userAccountID').value;
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        fetch('/reset_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ accountID, currentPassword, newPassword })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            closeModal();
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // =========
+    async function updateUserStatus(accountID, isActive) {
+        try {
+            const response = await fetch(`/users/${accountID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ is_Active: isActive })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${isActive ? 'activate' : 'deactivate'} user`);
+            }
+
+            console.log(`User ${isActive ? 'activated' : 'deactivated'} successfully`);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async function activateUser(accountID) {
+        await updateUserStatus(accountID, true);
+        location.reload();
+    }
+
+    async function deactivateUser(accountID) {
+        await updateUserStatus(accountID, false);
+        location.reload(); 
+    }
+
+</script>
+</body>
+</html>

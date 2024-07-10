@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery library -->
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/add_material.css">
+<style>
+.back_chemical{
+    cursor: pointer;
+    user-select: none; 
+    float: right;
+}
+</style>
+</head>
+<body>
+
+    <%- include('sidebar.ejs') %>
+
+<div class="content">
+    <h1>Add Chemical </h1>
+    <!-- <a href="/view_chemical_list"> <button class="back_chemical" id="back_chemical">Back</button></a>  --- REMOVED BACK BUTTON -->
+    <div>
+        <hr>
+    <form action="/add_chemical_recipe" method="POST">
+        <label for="chemical_Name">Name:</label>
+        <input type="text" class="chemicalName" name="chemical_Name" style="display: block; width: 90px;">
+        
+        <label for="Unit Measurement">Unit Measurement:</label>
+        <select class="unit_Measure" name="unit_Measure" style="width: 100px;" required> 
+            <% units.forEach(function(unit) { %>
+                <option value="" disabled selected hidden>-- Select --</option>
+                <option value="<%= unit.measure_ID %>"><%= unit.measure_ID %></option>
+            <% }); %>
+        </select>
+        <input type="text" class="unit_Measure_custom" name="unit_Measure_custom" placeholder="Enter Unit" style="display: none; width: 90px;" >
+
+        <label for="Base Quantity">Base Quantity:</label>
+        <input type="text" name="base_quantity" style="width: 90px;" required>
+            
+        <label for="cost">Cost:</label>
+        <input type="text" name="unit_cost" style="width: 90px;" required>
+
+        <h1>Add Recipe</h1>
+        <div>
+            <hr>
+                <!-- Raw Material Rows -->
+                <div id="materialRows">
+                    <!-- Initial Raw Material row will be added dynamically -->
+                </div>
+                
+                <!-- Button to add new raw material row -->
+                <button type="button" id="addMaterialButton">Add Material</button>
+                
+        </div>
+        <!-- Submit Button -->
+        <button type="submit" class="submitBtn">Submit</button>
+        <!-- Hidden Input to store Data-->
+        <input type="hidden" id="recipeDataJson" name="recipeDataJson">
+    </form>
+  </div>
+
+  <script>
+    $('form').submit(function(event) {
+    event.preventDefault();
+
+    const materialRows = $('.materialRow');
+    const recipeData = materialRows.map(function() {
+        return {
+            rawMaterial: $(this).find('.rawMaterial').val(),
+            quantity: $(this).find('.quantity').val(),
+            unitMeasure: $(this).find('.unitMeasure').val(),
+            material_name_custom: $(this).find('.material_name_custom').val(),
+        };
+    }).get();
+
+    console.log("Recipe data before submission:", recipeData);
+
+    $('#recipeDataJson').val(JSON.stringify(recipeData));
+    // Now submit the form
+    this.submit();
+});
+
+
+function addMaterialRow(
+materialOptions = `
+  <% material.forEach(function(material) { %>
+    <option value="" disabled selected hidden>-- Select --</option>
+    <option value="<%= material.name %>"><%= material.name %></option>
+  <% }); %>
+  <option value="other">Other...</option>
+`,
+unitOptions = `
+  <% units.forEach(function(unit) { %>
+    <option value="" disabled selected hidden>-- Select --</option>
+    <option value="<%= unit.measure_ID %>"><%= unit.measure_ID %></option>
+  <% }); %>
+` ) {
+
+var materialRows = $('#materialRows');
+var newRow = $('<div>').addClass('materialRow');
+
+newRow.html(`
+    <label for="rawMaterial">Raw Material:</label>
+    <select name="rawMaterial" class="rawMaterial" onchange="checkOtherOption(this)" required style="width: 100px;">
+            ${materialOptions}
+    </select>
+    <input type="text" class="material_name_custom" name="material_name_custom" placeholder="Enter Name" style="display: none; width: 90px;">
+    
+    <label for="quantity">Quantity:</label>
+    <input type="number" name="quantity" class="quantity" required style="width: 90px;">
+    
+    <label for="unitMeasure">Unit Measure:</label>
+    <select name="unitMeasure" class="unitMeasure" required style="width: 100px;">
+            ${unitOptions}
+    </select>
+`);
+
+// Check if "Other..." is selected for raw material and trigger the display of the text box
+if (newRow.find('.rawMaterial').val() === 'other') {
+    newRow.find('.material_name_custom').css('display', 'inline');
+}
+
+// Add a remove button for each row except the first one
+if (materialRows.children().length > 0) {
+    newRow.append(`<button type="button" class="removeRowButton" onclick="removeMaterialRow(this)">Remove</button>`);
+}
+
+materialRows.append(newRow);
+}
+
+
+// Function to remove a raw material row
+function removeMaterialRow(buttonElement) {
+    var rowToRemove = $(buttonElement).parent();
+    rowToRemove.remove();
+}
+
+// Function to show/hide custom input textbox based on dropdown selection
+function checkOtherOption(selectElement) {
+    var selectValue = $(selectElement).val();
+    var materialCustomInput = $(selectElement).parent().find('.material_name_custom');
+
+    if (selectElement.name === 'rawMaterial') {
+        materialCustomInput.css('display', selectValue === 'other' ? 'inline' : 'none');
+        materialCustomInput.prop('required', selectValue === 'other');
+    }
+}
+
+// Event listener for the Add Material button
+$('#addMaterialButton').click(function() {
+    addMaterialRow();
+});
+
+// Call the function to add the first material row
+addMaterialRow();
+
+</script>
+
+
+</body>
+</html>
