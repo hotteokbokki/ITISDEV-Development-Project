@@ -424,6 +424,78 @@ app.get('/inventory', checkAuthenticated, (req, res) => {
   res.render('inventory', { userRole: req.user.position });
 });
 
+app.get('/compute_wma', async (req, res) => {
+  const days = parseInt(req.query.days);
+
+  const currentDate = new Date();
+  const pastDate = new Date();
+  pastDate.setDate(currentDate.getDate() - days);
+
+  const currentDateString = currentDate.toISOString().split('T')[0];
+  const pastDateString = pastDate.toISOString().split('T')[0];
+
+  try {
+    const materials = await getRawMaterialsData();
+
+    const queryOut = `
+      SELECT "materialID", "no_of_materials", "unit_Measure", "date"
+      FROM "rawMaterials_Out"
+      WHERE "date" >= $1
+        AND "date" <= $2;
+    `;
+
+    const queryIn = `
+      SELECT "materialID", "no_of_materials", "unit_Measure", "date_Purchased"
+      FROM "rawMaterials_purchasing"
+      WHERE "date_Purchased" >= $1
+        AND "date_Purchased" <= $2;
+    `;
+
+    const { rows: rawMatsOutData } = await pool.query(queryOut, [pastDateString, currentDateString]);
+    const { rows: rawMatsInData } = await pool.query(queryIn, [pastDateString, currentDateString]);
+
+    const predictions = await Promise.all(materials.map(async (material) => {
+      const materialID = material.materialID;
+      const materialOutData = rawMatsOutData.filter(item => item.materialID === materialID);
+      const materialInData = rawMatsInData.filter(item => item.materialID === materialID);
+
+      const rawInQuantities = materialInData.map(item => convertToStandardUnit(item.no_of_materials, item.unit_Measure));
+      const rawOutQuantities = materialOutData.map(item => convertToStandardUnit(item.no_of_materials, item.unit_Measure));
+
+      const totalDays = rawInQuantities.length;
+
+      if (totalDays > 0) {
+        let wmaIn = 0;
+        let wmaOut = 0;
+        let sumWeights = 0;
+
+        for (let i = 0; i < totalDays; i++) {
+          const weight = totalDays - i;
+          wmaIn += rawInQuantities[i] * weight;
+          wmaOut += rawOutQuantities[i] * weight;
+          sumWeights += weight;
+        }
+
+        wmaIn /= sumWeights;
+        wmaOut /= sumWeights;
+
+        const prediction = wmaIn - wmaOut;
+
+        return { materialID, name: material.name, unitMeasure: material.unit_Measure, prediction };
+      } else {
+        return { materialID, name: material.name, unitMeasure: material.unit_Measure, prediction: 'Not enough data' };
+      }
+    }));
+
+    res.json(predictions);
+  } catch (error) {
+    console.error('Error executing query', error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
 app.get('/compute_KNN', async (req, res) => {
   const days = parseInt(req.query.days);
 
@@ -488,6 +560,7 @@ app.get('/compute_KNN', async (req, res) => {
 });
 
 
+
 app.get('/compute_sma', async (req, res) => {
   try {
     const days = req.query.days;
@@ -523,46 +596,7 @@ app.get('/compute_sma', async (req, res) => {
   }
 });
 
-app.get('/compute_wma', async (req, res) => {
-  try {
-    const days = req.query.days;
 
-    const query = `
-    SELECT
-    rm.name AS raw_material_name,
-    SUM(rmo.no_of_materials * 1) / 1 AS wma,
-    um."measure_ID" AS unit
-FROM
-    "rawMaterials_Out" AS rmo
-JOIN
-    "raw_Materials" AS rm ON rmo."materialID" = rm."materialID"
-JOIN 
-    "unit_Measure" AS um ON rm."unit_Measure" = um."measure_ID"
-JOIN
-    (SELECT 
-        rmo."materialID",
-        rmo.no_of_materials,
-        generate_series(1, ${days}, 1) AS weight
-    FROM
-        "rawMaterials_Out" AS rmo
-    WHERE
-        rmo."date" >= NOW() - INTERVAL '${days} days'
-        AND rmo.reason = 'sold'
-    ORDER BY
-        rmo."date" DESC
-    LIMIT ${days}) AS weights ON rmo."materialID" = weights."materialID"
-GROUP BY
-    rm.name, um."measure_ID";
-    `;
-
-    const { rows } = await pool.query(query);
-
-    res.json(rows);
-  } catch (error) {
-    console.error('Error computing WMA:', error.message);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 app.get('/view_raw_materials', checkAuthenticated, checkRole(['Admin', 'Stock Controller', 'Manufacturer', 'Sales']), async (req, res) => {
   try {

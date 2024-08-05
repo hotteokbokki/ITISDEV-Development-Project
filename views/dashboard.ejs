@@ -169,7 +169,7 @@
                     <option value="">Choose an algorithm</option>
                     <option value="SMA">Simple Moving Average</option>
                     <option value="KNN">KNN</option>
-                    <!-- <option value="WMA">Weighted Moving Average</option> -->
+                    <option value="WMA">Weighted Moving Average</option>
                 </select>
                 <div id="daysInput" style="display: none;">
                     <label for="days">Number of Days Prior:</label>
@@ -222,7 +222,7 @@
             row.innerHTML = `
                 <td>${chemical.chemicalName}</td>
                 <td>${chemical.totalOrders} orders</td>
-                <td>${chemical.unitMeasure} unitmeasure</td>
+                <td>${chemical.unitMeasure}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -237,6 +237,8 @@
                 response = await fetch(`/compute_sma?days=${days}`);
             } else if (selectedAlgorithm === 'KNN') {
                 response = await fetch(`/compute_KNN?days=${days}`);
+            } else if (selectedAlgorithm === 'WMA') {
+                response = await fetch(`/compute_wma?days=${days}`);
             }
             const data = await response.json();
             const tableBody = document.getElementById('analyticsTableBody');
