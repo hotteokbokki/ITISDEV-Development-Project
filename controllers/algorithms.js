@@ -15,6 +15,9 @@ function compute() {
             console.log("Executing KNN Analytics function...");
             calculateKNN();
             break;
+        case "SD":
+            console.log("Executing Seasonal Decomposition function...")
+            calculateSD();
         default:
             console.log("Invalid algorithm selected");
     }
@@ -44,6 +47,32 @@ async function calculateWeightedMovingAverageForAllMaterials(n) {
         console.log('Weighted Moving Averages:', data);
     } catch (error) {
         console.error('Error computing Weighted Moving Averages:', error);
+    }
+}
+
+// Function to Seasonal Decomposition for all raw materials
+async function calculateSD(n) {
+    try {
+        const days = n;
+
+        const response = await fetch(`/compute_SD?days=${days}`);
+        const data = await response.json();
+
+        const tableBody = document.getElementById('analyticsTableBody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.name}</td>
+                <td>${row.prediction}</td>
+                <td>${row.unitMeasure}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error('Error computing Seasonal Decomposition:', error);
     }
 }
 
