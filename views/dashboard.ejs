@@ -136,6 +136,7 @@
                     <option value="SMA">Simple Moving Average</option>
                     <option value="KNN">KNN</option>
                     <option value="WMA">Weighted Moving Average</option>
+                    <option value="SD">Seasonal Decomposition</option>
                 </select>
                 <div id="daysInput" style="display: none;">
                     <label for="days">Number of Days Prior:</label>
@@ -211,6 +212,8 @@
                 response = await fetch(`/compute_KNN?days=${days}`);
             } else if (selectedAlgorithm === 'WMA') {
                 response = await fetch(`/compute_wma?days=${days}`);
+            } else if (selectedAlgorithm === 'SD') {
+                response = await fetch(`/compute_SD?days=${days}`);
             }
             const data = await response.json();
             const tableBody = document.getElementById('analyticsTableBody');
