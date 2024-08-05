@@ -178,7 +178,7 @@
                 <select id="unit" onchange="toggleInputField()">
                     <option value="">Choose an algorithm</option>
                     <option value="SMA">Simple Moving Average</option>
-                    <option value="WMA">Weighted Moving Average</option>
+                    <option value="KNN">KNN</option>
                     <!-- <option value="SD">Seasonal Decomposition</option>
                     <option value="HOLT">Holt's</option>
                     <option value="ADA">Anomaly Detection Algorithm</option>
@@ -266,47 +266,44 @@
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
+    function toggleInputField() {
+        const selectedAlgorithm = document.getElementById("unit").value;
+        document.getElementById("daysInput").style.display = selectedAlgorithm ? 'block' : 'none';
+    }
 
-    // Assuming chemicalData contains the chemical data fetched from the server
-    const chemicalData = [
- { chemicalName: "Hydrogen peroxide", totalOrders: 12 },
-    { chemicalName: "Polypropylene", totalOrders: 15 }
-    // Add more chemical data here if needed
-];
+    async function populateInDemandChemicalsTable() {
+        const tableBody = document.getElementById("inDemandChemicalsTableBody");
+        tableBody.innerHTML = ""; // Clear existing rows
+        chemicalData.forEach(chemical => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${chemical.chemicalName}</td>
+                <td>${chemical.totalOrders} orders</td>
+                <td>${chemical.unitMeasure} unitmeasure</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
 
-// Function to populate the in-demand chemicals table
-function populateInDemandChemicalsTable() {
-    const tableBody = document.getElementById("inDemandChemicalsTableBody");
-    tableBody.innerHTML = ""; // Clear existing rows
-    chemicalData.forEach(chemical => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${chemical.chemicalName}</td>
-            <td>${chemical.quantityToPurchase} orders</td>
-            <td>${chemical.unitMeasure} unitmeasure</td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-// Call the function to populate the table
-populateInDemandChemicalsTable();
-
-
-
-async function populateAnalyticsTable() {
+    async function populateAnalyticsTable() {
         const days = document.getElementById('days').value;
+        const selectedAlgorithm = document.getElementById("unit").value;
         try {
-            const response = await fetch(`/compute_sma?days=${days}`);
+            let response;
+            if (selectedAlgorithm === 'SMA') {
+                response = await fetch(`/compute_sma?days=${days}`);
+            } else if (selectedAlgorithm === 'KNN') {
+                response = await fetch(`/compute_KNN?days=${days}`);
+            }
             const data = await response.json();
             const tableBody = document.getElementById('analyticsTableBody');
             tableBody.innerHTML = ''; // Clear existing rows
             data.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.raw_material_name}</td>
-                    <td>${row.sma}</td>
-                    <td>${row.unit}</td> 
+                    <td>${row.name}</td>
+                    <td>${row.prediction}</td>
+                    <td>${row.unitMeasure}</td>
                 `;
                 tableBody.appendChild(tr);
             });
@@ -319,6 +316,8 @@ async function populateAnalyticsTable() {
         populateAnalyticsTable();
     }
 
+    // Initialize the page
+    toggleInputField();
 </script>
 
 </body>

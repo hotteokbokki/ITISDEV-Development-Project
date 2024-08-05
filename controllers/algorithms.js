@@ -11,6 +11,9 @@ function compute() {
             let nWMA = 5; // Number of days to consider for the moving average for WMA
             calculateWeightedMovingAverageForAllMaterials(nWMA);
             break;
+        case "KNN":
+            console.log("Executing KNN Analytics function...");
+            calculateKNN();
         default:
             console.log("Invalid algorithm selected");
     }
@@ -49,6 +52,28 @@ async function calculateSimpleMovingAverageForAllMaterials(n) {
         console.log('Simple Moving Averages:', data);
     } catch (error) {
         console.error('Error computing Simple Moving Averages:', error);
+    }
+}
+
+async function calculateKNN() {
+    try {
+        const days = document.getElementById('days').value;
+
+        const response = await fetch(`/compute_KNN?days=${days}`);
+        const data = await response.json();
+        const tableBody = document.getElementById('analyticsTableBody');
+        tableBody.innerHTML = ''; // Clear existing rows
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.name}</td>
+                <td>${row.prediction}</td>
+                <td>${row.unitMeasure}</td> 
+            `;
+            tableBody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Error computing KNN:', error);
     }
 }
 

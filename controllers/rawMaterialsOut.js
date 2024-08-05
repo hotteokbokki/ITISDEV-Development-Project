@@ -150,3 +150,19 @@ exports.getRawMaterialsOutByID = async (materialID) => {
   
     return data;
 };
+
+exports.getRawMatsOutKNN = async (materialID, days) => {
+
+    const currentDate = new Date();
+    const pastDate = new Date();
+    pastDate.setDate(currentDate.getDate() - days);
+
+    const { data } = await supabase
+    .from('rawMaterials_Out')
+    .select('no_of_materials, date')
+    .eq('materialID', materialID)
+    .gte('date', pastDate)
+    .lte('date', currentDate);
+
+    return data;
+}

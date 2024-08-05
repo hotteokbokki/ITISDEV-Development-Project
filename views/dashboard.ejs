@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -62,43 +63,37 @@
             padding-right: 10px;
         }
 
-        /* Add this CSS to your stylesheet */
+        /* Container for the tables */
+        .table-container {
+            max-height: 200px; /* Set your desired fixed height */
+            overflow-y: auto; /* Enable vertical scrollbar */
+        }
 
-/* Add this CSS to your stylesheet */
+        /* Style for the tables */
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-/* Container for the tables */
-.table-container {
-    max-height: 200px; /* Set your desired fixed height */
-    overflow-y: auto; /* Enable vertical scrollbar */
-}
+        .table-container th, .table-container td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
 
-/* Style for the tables */
-.table-container table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        .table-container th {
+            background-color: #0284ac; /* Blue background color for table header */
+            color: white; /* White text color for table header */
+        }
 
-.table-container th, .table-container td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
+        .table-container tbody tr:nth-child(even) {
+            background-color: #f2f2f2; /* Light gray background color for even rows */
+        }
 
-.table-container th {
-    background-color: #0284ac; /* Blue background color for table header */
-    color: white; /* White text color for table header */
-}
+        .table-container tbody tr:hover {
+            background-color: #ddd; /* Darker gray background color on hover */
+        }
 
-.table-container tbody tr:nth-child(even) {
-    background-color: #f2f2f2; /* Light gray background color for even rows */
-}
-
-.table-container tbody tr:hover {
-    background-color: #ddd; /* Darker gray background color on hover */
-}
-
-
-    
         /* Adjust form section width to 50% */
         .form-section {
             flex: 1;
@@ -132,18 +127,15 @@
         }
 
         .Requisition-Form {
-        background-color: #ffffff; /* Background color */
-        padding: 20px; /* Add padding */
-        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Add shadow effect */
-        border-radius: 10px; /* Add rounded corners */
-        margin: 0 auto; /* Center horizontally */
-        max-width: 98%; /* Set maximum width */
-    }
-
+            background-color: #ffffff; /* Background color */
+            padding: 20px; /* Add padding */
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Add shadow effect */
+            border-radius: 10px; /* Add rounded corners */
+            margin: 0 auto; /* Center horizontally */
+            max-width: 98%; /* Set maximum width */
+        }
 
     </style>
-    
-    
 </head>
 <body>
     <%- include('sidebar.ejs') %>
@@ -176,12 +168,8 @@
                 <select id="unit" onchange="toggleInputField()">
                     <option value="">Choose an algorithm</option>
                     <option value="SMA">Simple Moving Average</option>
-                    <!-- <option value="WMA">Weighted Moving Average</option> -->
-                    <!-- <option value="SD">Seasonal Decomposition</option>
-                    <option value="HOLT">Holt's</option>
-                    <option value="ADA">Anomaly Detection Algorithm</option>
                     <option value="KNN">KNN</option>
-                    <option value="SVM">Sector Vector Machine</option> -->
+                    <!-- <option value="WMA">Weighted Moving Average</option> -->
                 </select>
                 <div id="daysInput" style="display: none;">
                     <label for="days">Number of Days Prior:</label>
@@ -207,75 +195,58 @@
                             <th>Orders</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <% chemicalData.forEach(chemical => { %>
-                            <tr>
-                                <td><%= chemical.chemicalName %></td>
-                                <td><%= chemical.totalOrders %> orders</td>
-
-                            </tr>
-                        <% }); %>
+                    <tbody id="inDemandChemicalsTableBody">
+                        <!-- Table rows will be dynamically populated here -->
                     </tbody>
                 </table>
                 </div>
             </section>
         </section>
     </div>
-
- 
-        
-        
-
-     
-
-        
 </div>
 
 <script>
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
+    function toggleInputField() {
+        const selectedAlgorithm = document.getElementById("unit").value;
+        document.getElementById("daysInput").style.display = selectedAlgorithm ? 'block' : 'none';
+    }
 
-    // Assuming chemicalData contains the chemical data fetched from the server
-    const chemicalData = [
- { chemicalName: "Hydrogen peroxide", totalOrders: 12 },
-    { chemicalName: "Polypropylene", totalOrders: 15 }
-    // Add more chemical data here if needed
-];
+    async function populateInDemandChemicalsTable() {
+        const tableBody = document.getElementById("inDemandChemicalsTableBody");
+        tableBody.innerHTML = ""; // Clear existing rows
+        chemicalData.forEach(chemical => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${chemical.chemicalName}</td>
+                <td>${chemical.totalOrders} orders</td>
+                <td>${chemical.unitMeasure} unitmeasure</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
 
-// Function to populate the in-demand chemicals table
-function populateInDemandChemicalsTable() {
-    const tableBody = document.getElementById("inDemandChemicalsTableBody");
-    tableBody.innerHTML = ""; // Clear existing rows
-    chemicalData.forEach(chemical => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${chemical.chemicalName}</td>
-            <td>${chemical.quantityToPurchase} orders</td>
-            <td>${chemical.unitMeasure} unitmeasure</td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-// Call the function to populate the table
-populateInDemandChemicalsTable();
-
-
-
-async function populateAnalyticsTable() {
+    async function populateAnalyticsTable() {
         const days = document.getElementById('days').value;
+        const selectedAlgorithm = document.getElementById("unit").value;
         try {
-            const response = await fetch(`/compute_sma?days=${days}`);
+            let response;
+            if (selectedAlgorithm === 'SMA') {
+                response = await fetch(`/compute_sma?days=${days}`);
+            } else if (selectedAlgorithm === 'KNN') {
+                response = await fetch(`/compute_KNN?days=${days}`);
+            }
             const data = await response.json();
             const tableBody = document.getElementById('analyticsTableBody');
             tableBody.innerHTML = ''; // Clear existing rows
             data.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.raw_material_name}</td>
-                    <td>${row.sma}</td>
-                    <td>${row.unit}</td> 
+                    <td>${row.name}</td>
+                    <td>${row.prediction}</td>
+                    <td>${row.unitMeasure}</td>
                 `;
                 tableBody.appendChild(tr);
             });
@@ -288,6 +259,8 @@ async function populateAnalyticsTable() {
         populateAnalyticsTable();
     }
 
+    // Initialize the page
+    toggleInputField();
 </script>
 
 </body>
