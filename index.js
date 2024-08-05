@@ -9,6 +9,7 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const methodOverride = require('method-override');
 const KNN = require('ml-knn');
+const LinearRegression = require('ml-regression').SimpleLinearRegression;
 
 dotenv.config();
 
@@ -516,6 +517,74 @@ app.get('/compute_wma', async (req, res) => {
     res.json(predictions);
   } catch (error) {
     console.error('Error executing query', error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/compute_SD', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days); // Get the number of days prior from the query
+
+    const currentDate = new Date();
+    const pastDate = new Date();
+    pastDate.setDate(currentDate.getDate() - days);
+
+    const currentDateString = currentDate.toISOString().split('T')[0];
+    const pastDateString = pastDate.toISOString().split('T')[0];
+
+    // Fetch the raw materials data
+    const materials = await getRawMaterialsData();
+
+    // Fetch historical data for raw material usage
+    const queryOut = `
+      SELECT "materialID", "no_of_materials", "unit_Measure", "date"
+      FROM "rawMaterials_Out"
+      WHERE "date" >= $1 AND "date" <= $2;
+    `;
+    const { rows: rawMatsOutData } = await pool.query(queryOut, [pastDateString, currentDateString]);
+
+    const predictions = await Promise.all(materials.map(async (material) => {
+      const materialID = material.materialID;
+      const materialOutData = rawMatsOutData.filter(item => item.materialID === materialID);
+
+
+      if (materialOutData.length < 2) { // Ensure there is at least 2 data points
+        return { materialID, name: material.name, unitMeasure: material.unit_Measure, prediction: 'Not enough data' };
+      }
+
+      // Prepare data for trend analysis
+      const timeseriesData = materialOutData.map(item => ({
+        date: new Date(item.date),
+        value: convertToStandardUnit(item.no_of_materials, item.unit_Measure)
+      }));
+
+      timeseriesData.sort((a, b) => a.date - b.date);
+      const values = timeseriesData.map(item => item.value);
+      const dates = timeseriesData.map((item, index) => index);
+
+      // Perform linear regression for trend component
+      const regression = new LinearRegression(dates, values);
+      const trend = dates.map(date => regression.predict(date));
+
+      // Calculate seasonal component
+      const seasonLength = Math.min(365, values.length); // Use available length or yearly seasonality
+      const detrended = values.map((value, index) => value - trend[index]);
+      const seasonal = new Array(seasonLength).fill(0).map((_, i) =>
+        detrended.filter((_, index) => index % seasonLength === i).reduce((a, b) => a + b, 0) /
+        Math.floor(detrended.length / seasonLength)
+      );
+
+      // Forecast future demand
+      const lastTrend = trend[trend.length - 1];
+      const lastSeasonal = seasonal[timeseriesData.length % seasonLength] || 0;
+      const prediction = lastTrend + lastSeasonal;
+
+      return { materialID, name: material.name, unitMeasure: material.unit_Measure, prediction };
+    }));
+
+    res.json(predictions);
+  } catch (error) {
+    console.error('Error computing seasonal decomposition:', error.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
