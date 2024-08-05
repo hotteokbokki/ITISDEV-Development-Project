@@ -214,17 +214,24 @@
     }
 
     async function populateInDemandChemicalsTable() {
-        const tableBody = document.getElementById("inDemandChemicalsTableBody");
-        tableBody.innerHTML = ""; // Clear existing rows
-        chemicalData.forEach(chemical => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${chemical.chemicalName}</td>
-                <td>${chemical.totalOrders} orders</td>
-                <td>${chemical.unitMeasure}</td>
-            `;
-            tableBody.appendChild(row);
-        });
+        try {
+            const response = await fetch('/inDemandChemicals');
+            const chemicalData = await response.json();
+
+            const tableBody = document.getElementById("inDemandChemicalsTableBody");
+            tableBody.innerHTML = ""; // Clear existing rows
+
+            chemicalData.forEach(chemical => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${chemical.chemical_Name.trim()}</td>
+                    <td>${chemical.accumulatedorderquantity} orders</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching chemical data:', error);
+        }
     }
 
     async function populateAnalyticsTable() {
@@ -261,6 +268,7 @@
     }
 
     // Initialize the page
+    populateInDemandChemicalsTable();
     toggleInputField();
 </script>
 

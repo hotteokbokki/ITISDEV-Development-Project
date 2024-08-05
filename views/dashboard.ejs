@@ -9,14 +9,10 @@
     <script src="/controllers/functionalScripts.js"></script>
     
     <style>
-        /* analytics.css */
-    
-        /* Style for "LOW ON STOCKS" */
         .LOS {
             color: rgb(0, 0, 0);
             width: 100%;
         }
-    
         .LOS h2{
             color: #2a7fff;
             margin-bottom: 0px;
@@ -26,8 +22,6 @@
         .LOS h4{
             margin: 0px;
         }
-    
-        /* Style for the dropdown menu */
         .converter select {
             padding: 7px;
             font-size: 16px;
@@ -35,8 +29,6 @@
             border-radius: 4px;
             cursor: pointer;
         }
-    
-        /* Style for the input field */
         .converter input[type="number"] {
             padding: 7px;
             font-size: 16px;
@@ -44,63 +36,45 @@
             border-radius: 4px;
             margin-top: 5px;
         }
-    
-        /* Style for the label */
         .converter label {
             display: block;
             margin-bottom: 5px;
         }
-    
-        /* Style for the "Requisition Form" div */
         .Requisition-Form {
             display: flex;
             width: 100%;
         }
-    
-        /* Adjust table section width to 50% */
         .table-section {
             flex: 1;
             padding-right: 10px;
         }
-
-        /* Container for the tables */
         .table-container {
-            max-height: 200px; /* Set your desired fixed height */
-            overflow-y: auto; /* Enable vertical scrollbar */
+            max-height: 200px;
+            overflow-y: auto;
         }
-
-        /* Style for the tables */
         .table-container table {
             width: 100%;
             border-collapse: collapse;
         }
-
         .table-container th, .table-container td {
             padding: 8px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-
         .table-container th {
-            background-color: #0284ac; /* Blue background color for table header */
-            color: white; /* White text color for table header */
+            background-color: #0284ac;
+            color: white;
         }
-
         .table-container tbody tr:nth-child(even) {
-            background-color: #f2f2f2; /* Light gray background color for even rows */
+            background-color: #f2f2f2;
         }
-
         .table-container tbody tr:hover {
-            background-color: #ddd; /* Darker gray background color on hover */
+            background-color: #ddd;
         }
-
-        /* Adjust form section width to 50% */
         .form-section {
             flex: 1;
             padding-left: 10px;
         }
-    
-        /* Style for the button */
         .converter button {
             padding: 10px 20px;
             background-color: #4CAF50;
@@ -109,39 +83,31 @@
             border-radius: 4px;
             cursor: pointer;
         }
-    
         .converter button:hover {
             background-color: #45a049;
         }
-    
-        /* Container for three parts */
         .container {
             display: flex;
             flex-direction: column;
         }
-    
-        /* Adjust the height of each part */
         .part {
             flex: 1;
             padding: 10px;
         }
-
         .Requisition-Form {
-            background-color: #ffffff; /* Background color */
-            padding: 20px; /* Add padding */
-            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Add shadow effect */
-            border-radius: 10px; /* Add rounded corners */
-            margin: 0 auto; /* Center horizontally */
-            max-width: 98%; /* Set maximum width */
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin: 0 auto;
+            max-width: 98%;
         }
-
     </style>
 </head>
 <body>
     <%- include('sidebar.ejs') %>
   
 <div class="content">
-
     <div class="Requisition-Form">
         <section class="table-section">
             <section class="data-container">
@@ -180,7 +146,6 @@
         </section>
     </div>
     
-
     <div class="LOS">
         <h2>In-Demand Chemicals</h2>
         <h4 id="currentDate"></h4>
@@ -215,17 +180,24 @@
     }
 
     async function populateInDemandChemicalsTable() {
-        const tableBody = document.getElementById("inDemandChemicalsTableBody");
-        tableBody.innerHTML = ""; // Clear existing rows
-        chemicalData.forEach(chemical => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${chemical.chemicalName}</td>
-                <td>${chemical.totalOrders} orders</td>
-                <td>${chemical.unitMeasure}</td>
-            `;
-            tableBody.appendChild(row);
-        });
+        try {
+            const response = await fetch('/inDemandChemicals');
+            const chemicalData = await response.json();
+
+            const tableBody = document.getElementById("inDemandChemicalsTableBody");
+            tableBody.innerHTML = ""; // Clear existing rows
+
+            chemicalData.forEach(chemical => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${chemical.chemical_Name.trim()}</td>
+                    <td>${chemical.accumulatedorderquantity} orders</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching chemical data:', error);
+        }
     }
 
     async function populateAnalyticsTable() {
@@ -262,6 +234,7 @@
     }
 
     // Initialize the page
+    populateInDemandChemicalsTable();
     toggleInputField();
 </script>
 

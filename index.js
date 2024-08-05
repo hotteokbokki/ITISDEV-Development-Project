@@ -424,6 +424,32 @@ app.get('/inventory', checkAuthenticated, (req, res) => {
   res.render('inventory', { userRole: req.user.position });
 });
 
+// Sample route to check database connection
+app.get('/inDemandChemicals', async (req, res) => {
+  try {
+    const result = await pool.query(`
+                  select
+                    c."chemical_Name",
+                    o."productID",
+                    sum(o."order_quantity") as accumulatedOrderQuantity
+                  from
+                    orders as o
+                    join chemicals as c on c."productID" = o."productID"
+                  group by
+                    c."chemical_Name",
+                    o."productID"
+                  order by
+                    accumulatedOrderQuantity desc
+                  limit
+                    5;
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Server Error');
+  }
+});
+
 app.get('/compute_wma', async (req, res) => {
   const days = parseInt(req.query.days);
 
