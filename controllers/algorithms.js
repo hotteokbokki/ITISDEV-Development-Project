@@ -18,6 +18,13 @@ function compute() {
         case "SD":
             console.log("Executing Seasonal Decomposition function...")
             calculateSD();
+            break;
+        case "Holt":
+            console.log("Executing Holt's Linear Trend function...");
+            let alpha = 0.8; // Smoothing parameter for the level
+            let beta = 0.2; // Smoothing parameter for the trend
+            calculateHoltsLinearTrendForAllMaterials(alpha, beta, days);
+            break;
         default:
             console.log("Invalid algorithm selected");
     }
@@ -122,5 +129,47 @@ async function calculateKNN() {
         });
     } catch (error) {
         console.error('Error computing KNN:', error);
+    }
+}
+
+// Function to calculate Holt's Linear Trend for all raw materials
+async function calculateHoltsLinearTrendForAllMaterials(alpha, beta, days) {
+    try {
+        const response = await fetch(`/compute_holts?alpha=${alpha}&beta=${beta}&days=${days}`);
+        const data = await response.json();
+
+        const tableBody = document.getElementById('analyticsTableBody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        let holt = [];
+        let level = data[0].value;
+        let trend = data[1].value - data[0].value;
+
+        for (let i = 0; i < data.length; i++) {
+            if (i === 0) {
+                holt.push(level);
+            } else {
+                let value = data[i].value;
+                let newLevel = alpha * value + (1 - alpha) * (level + trend);
+                let newTrend = beta * (newLevel - level) + (1 - beta) * trend;
+                holt.push(newLevel + newTrend);
+                level = newLevel;
+                trend = newTrend;
+            }
+        }
+
+        holt.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${data[index].name}</td>
+                <td>${row}</td>
+                <td>${data[index].unitMeasure}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        console.log('Holt\'s Linear Trend:', holt);
+    } catch (error) {
+        console.error('Error calculating Holt\'s Linear Trend:', error);
     }
 }
