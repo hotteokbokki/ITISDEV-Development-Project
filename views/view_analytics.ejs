@@ -170,6 +170,7 @@
                     <option value="KNN">KNN</option>
                     <option value="WMA">Weighted Moving Average</option>
                     <option value="SD">Seasonal Decomposition</option>
+                    <option value="Holt">Holt's Linear Trend</option>
                 </select>
                 <div id="daysInput" style="display: none;">
                     <label for="days">Number of Days Prior:</label>
@@ -248,6 +249,10 @@
                 response = await fetch(`/compute_wma?days=${days}`);
             } else if (selectedAlgorithm === 'SD') {
                 response = await fetch(`/compute_SD?days=${days}`);
+            } else if (selectedAlgorithm === 'Holt') {
+            let alpha = 0.8; // Smoothing parameter for the level
+            let beta = 0.2;  // Smoothing parameter for the trend
+            response = await fetch(`/compute_holts?alpha=${alpha}&beta=${beta}&days=${days}`);
             }
             const data = await response.json();
             const tableBody = document.getElementById('analyticsTableBody');

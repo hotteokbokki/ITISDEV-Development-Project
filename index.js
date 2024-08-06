@@ -686,6 +686,35 @@ app.get('/compute_sma', async (req, res) => {
 });
 
 
+app.get('/compute_holts', async (req, res) => {
+  const { alpha, beta, days } = req.query;
+
+  const currentDate = new Date();
+  const pastDate = new Date();
+  pastDate.setDate(currentDate.getDate() - days);
+
+  const currentDateString = currentDate.toISOString().split('T')[0];
+  const pastDateString = pastDate.toISOString().split('T')[0];
+
+  try {
+      const query = `
+          SELECT "materialID", "no_of_materials", "unit_Measure", "date"
+          FROM "rawMaterials_Out"
+          WHERE "date" >= $1
+            AND "date" <= $2;
+      `;
+
+      const { rows: rawMatsOutData } = await pool.query(query, [pastDateString, currentDateString]);
+
+      // Process the rawMatsOutData according to Holt's Linear Trend algorithm
+      // Send processed data as response
+      res.json(rawMatsOutData);
+  } catch (error) {
+      console.error('Error computing Holt\'s Linear Trend:', error.message);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 app.get('/view_raw_materials', checkAuthenticated, checkRole(['Admin', 'Stock Controller', 'Manufacturer', 'Sales']), async (req, res) => {
   try {
